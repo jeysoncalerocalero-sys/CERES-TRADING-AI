@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color: #0b0e11; color: #eaecef; font-family: sans-serif; }
-    canvas { background-color: #12161c; width: 100%; height: 300px; border-radius: 8px; }
+    canvas { background-color: #12161c; width: 100%; height: 260px; border-radius: 8px; }
   </style>
 </head>
 <body class="p-3">
@@ -16,7 +16,7 @@
   <header class="flex justify-between items-center mb-3 bg-gray-900 p-3 rounded-lg border border-yellow-500/30">
     <div>
       <h1 class="text-base font-extrabold text-yellow-400 tracking-wider">⚡ CERES TRADING AI</h1>
-      <p class="text-xs text-gray-400">Tutor de Scalping & Razonamiento IA</p>
+      <p class="text-xs text-gray-400">Tutor con IA en Vivo & Voz</p>
     </div>
     <div class="text-right">
       <span class="text-xs text-gray-400">Demo Balance</span>
@@ -25,10 +25,21 @@
   </header>
 
   <!-- SELECCIÓN DE MONEDAS VOLÁTILES -->
-  <div class="flex gap-2 mb-3">
+  <div class="flex gap-2 mb-2">
     <button onclick="cambiarMoneda('BTC/USDT', 65000)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded border border-yellow-500/40 text-yellow-400 font-bold">BTC/USDT</button>
     <button onclick="cambiarMoneda('SOL/USDT', 145)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded border border-purple-500/40 text-purple-400 font-bold">SOL/USDT</button>
     <button onclick="cambiarMoneda('ETH/USDT', 2600)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded border border-blue-500/40 text-blue-400 font-bold">ETH/USDT</button>
+  </div>
+
+  <!-- SELECCIÓN DE APALANCAMIENTO -->
+  <div class="mb-3 bg-gray-900 p-2 rounded-lg border border-gray-800">
+    <span class="text-xs text-gray-400 block mb-1">Apalancamiento de Scalping:</span>
+    <div class="flex gap-1">
+      <button onclick="setLeverage(10)" id="lev-10" class="flex-1 bg-gray-800 text-xs py-1 rounded text-gray-300 font-bold border border-gray-700">10x</button>
+      <button onclick="setLeverage(20)" id="lev-20" class="flex-1 bg-gray-800 text-xs py-1 rounded text-gray-300 font-bold border border-gray-700">20x</button>
+      <button onclick="setLeverage(50)" id="lev-50" class="flex-1 bg-gray-800 text-xs py-1 rounded text-gray-300 font-bold border border-gray-700">50x</button>
+      <button onclick="setLeverage(75)" id="lev-75" class="flex-1 bg-yellow-600 text-xs py-1 rounded text-white font-bold border border-yellow-500">75x ⚡</button>
+    </div>
   </div>
 
   <!-- GRÁFICO EN VIVO -->
@@ -42,11 +53,14 @@
 
   <!-- PANEL DE RAZONAMIENTO EN VIVO CERES AI -->
   <div class="bg-gray-900 border border-yellow-500/30 rounded-lg p-3 mb-3">
-    <div class="flex items-center gap-2 mb-1">
-      <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
-      <h2 class="text-xs font-bold text-yellow-400">CERES AI: Explicación de Vela en Vivo</h2>
+    <div class="flex items-center justify-between mb-1">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+        <h2 class="text-xs font-bold text-yellow-400">CERES AI: Análisis en Vivo</h2>
+      </div>
+      <button onclick="toggleVoz()" id="btn-voz" class="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-gray-300 border border-gray-700">🔊 Voz: Activada</button>
     </div>
-    <p id="ai-live-text" class="text-xs text-gray-300 leading-relaxed">Analizando flujo de órdenes y anatomía de velas...</p>
+    <p id="ai-live-text" class="text-xs text-gray-300 leading-relaxed">Esperando formación de vela...</p>
   </div>
 
   <!-- OPERACIÓN Y BOTONES -->
@@ -68,7 +82,39 @@
   <script>
     let symbol = 'BTC/USDT';
     let currentPrice = 65000;
+    let leverage = 75;
+    let vozActiva = true;
     let candles = [];
+    let ultimoTextoVoz = "";
+
+    function setLeverage(lev) {
+      leverage = lev;
+      [10, 20, 50, 75].forEach(l => {
+        let btn = document.getElementById('lev-' + l);
+        if (l === lev) {
+          btn.className = "flex-1 bg-yellow-600 text-xs py-1 rounded text-white font-bold border border-yellow-500";
+        } else {
+          btn.className = "flex-1 bg-gray-800 text-xs py-1 rounded text-gray-300 font-bold border border-gray-700";
+        }
+      });
+      hablar("Apalancamiento ajustado a " + lev + " x. Precaución con la volatilidad.");
+    }
+
+    function toggleVoz() {
+      vozActiva = !vozActiva;
+      document.getElementById('btn-voz').innerText = vozActiva ? "🔊 Voz: Activada" : "🔇 Voz: Silenciada";
+    }
+
+    function hablar(texto) {
+      if (!vozActiva || !('speechSynthesis' in window)) return;
+      if (texto === ultimoTextoVoz) evitaRepeticion = true;
+      ultimoTextoVoz = texto;
+      window.speechSynthesis.cancel();
+      let msg = new SpeechSynthesisUtterance(texto.replace(/[*#]/g, ''));
+      msg.lang = 'es-ES';
+      msg.rate = 1.1;
+      window.speechSynthesis.speak(msg);
+    }
 
     function initCandles() {
       candles = [];
@@ -88,6 +134,7 @@
       currentPrice = p;
       document.getElementById('symbol-display').innerText = symbol;
       initCandles();
+      hablar("Cambiado a " + s);
     }
 
     function renderChart() {
@@ -95,23 +142,20 @@
       const ctx = canvas.getContext('2d');
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       let maxP = Math.max(...candles.map(c => c.high));
       let minP = Math.min(...candles.map(c => c.low));
       let range = (maxP - minP) || 1;
-
       let candleWidth = (canvas.width - 30) / candles.length;
 
       candles.forEach((c, i) => {
         let x = i * candleWidth + 10;
         let isGreen = c.close >= c.open;
-
-        let yHigh = canvas.height - ((c.high - minP) / range) * (canvas.height - 40) - 20;
-        let yLow = canvas.height - ((c.low - minP) / range) * (canvas.height - 40) - 20;
-        let yOpen = canvas.height - ((c.open - minP) / range) * (canvas.height - 40) - 20;
-        let yClose = canvas.height - ((c.close - minP) / range) * (canvas.height - 40) - 20;
+        let yHigh = canvas.height - ((c.high - minP) / range) * (canvas.height - 30) - 15;
+        let yLow = canvas.height - ((c.low - minP) / range) * (canvas.height - 30) - 15;
+        let yOpen = canvas.height - ((c.open - minP) / range) * (canvas.height - 30) - 15;
+        let yClose = canvas.height - ((c.close - minP) / range) * (canvas.height - 30) - 15;
 
         ctx.strokeStyle = isGreen ? '#10b981' : '#f43f5e';
         ctx.lineWidth = 1;
@@ -129,7 +173,6 @@
     setInterval(() => {
       let change = (Math.random() - 0.49) * (currentPrice * 0.0015);
       currentPrice += change;
-      
       let lastCandle = candles[candles.length - 1];
       lastCandle.close = currentPrice;
       if (currentPrice > lastCandle.high) lastCandle.high = currentPrice;
@@ -138,7 +181,7 @@
       document.getElementById('price-display').innerText = '$' + currentPrice.toFixed(2);
       renderChart();
       analizarVelaEnVivo(lastCandle);
-    }, 1000);
+    }, 1200);
 
     function analizarVelaEnVivo(c) {
       let range = c.high - c.low;
@@ -147,16 +190,16 @@
       let text = "";
 
       if (upperWick > range * 0.38) {
-        text = "⚠️ **Rechazo Superior:** La vela deja mecha larga arriba en " + symbol + ". Vendedores absorbiendo compras. Alto riesgo para Longs.";
+        text = "⚠️ Rechazo Superior en " + symbol + ". Vendedores absorbiendo compras.";
       } else if (lowerWick > range * 0.38) {
-        text = "📈 **Absorción Compradora:** Presión en la mecha inferior. Compradores defendiendo la zona. Atento a rebote rápido.";
+        text = "📈 Absorción compradora detectada en la zona baja.";
       } else if (c.close > c.open) {
-        text = "🟢 **Impulso Alcista:** Cuerpo verde dominando. Presión de compra activa en tiempo real.";
+        text = "🟢 Impulso alcista activo en la vela actual.";
       } else {
-        text = "🔴 **Presión Bajista:** Vela roja en expansión. Dominio de oferta en la sesión actual.";
+        text = "🔴 Presión bajista dominando el movimiento.";
       }
 
-      document.getElementById('ai-live-text').innerHTML = text;
+      document.getElementById('ai-live-text').innerText = text;
     }
 
     function operar(tipo) {
@@ -164,7 +207,6 @@
       let range = c.high - c.low;
       let upperWick = c.high - Math.max(c.open, c.close);
       let lowerWick = Math.min(c.open, c.close) - c.low;
-
       let box = document.getElementById('feedback-box');
       let title = document.getElementById('feedback-title');
       let desc = document.getElementById('feedback-desc');
@@ -174,18 +216,21 @@
       if (tipo === 'LONG' && upperWick > range * 0.35) {
         box.classList.add('border-red-500', 'bg-red-950/40');
         title.className = "text-xs font-bold text-red-400 mb-1";
-        title.innerText = "❌ CORRECCIÓN DE CERES AI";
-        desc.innerText = "¡Cuidado! Entraste a COMPRAR en pleno rechazo superior (mecha alta). En scalping esto es entrar tarde cuando la presión se agota.";
+        title.innerText = "❌ ERROR CON APALANCAMIENTO " + leverage + "X";
+        desc.innerText = "¡Peligro! Entraste en LONG justo en una mecha de rechazo superior con apalancamiento alto. Te habrían liquidado por comprar en la cima.";
+        hablar("Error crítico. Compraste en la mecha alta con apalancamiento alto.");
       } else if (tipo === 'SHORT' && lowerWick > range * 0.35) {
         box.classList.add('border-red-500', 'bg-red-950/40');
         title.className = "text-xs font-bold text-red-400 mb-1";
-        title.innerText = "❌ CORRECCIÓN DE CERES AI";
-        desc.innerText = "¡Cuidado! Vendiste (SHORT) justo en la mecha inferior donde entra la absorción compradora.";
+        title.innerText = "❌ ERROR CON APALANCAMIENTO " + leverage + "X";
+        desc.innerText = "¡Peligro! Vendiste en SHORT en la mecha inferior donde los compradores defienden la posición.";
+        hablar("Error de entrada en contra de la absorción baja.");
       } else {
         box.classList.add('border-emerald-500', 'bg-emerald-950/40');
         title.className = "text-xs font-bold text-emerald-400 mb-1";
-        title.innerText = "✅ OPERACIÓN VALIDADA";
-        desc.innerText = "Excelente temporización. Entraste con la dirección correcta de la vela sin chocar contra mechas opuestas.";
+        title.innerText = "✅ ENTRADA VÁLIDA (" + leverage + "X)";
+        desc.innerText = "Buena ejecución a favor del flujo de la vela. Gestión de riesgo adecuada para scalping rápido.";
+        hablar("Operación correcta validada por Ceres.");
       }
     }
 
