@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CERES TRADING AI - Tutor de Scalping</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0b0e11; color: #eaecef; font-family: sans-serif; }
+    canvas { background-color: #12161c; width: 100%; height: 300px; border-radius: 8px; }
+  </style>
+</head>
+<body class="p-3">
+
+  <!-- ENCABEZADO CERES TRADING AI -->
+  <header class="flex justify-between items-center mb-3 bg-gray-900 p-3 rounded-lg border border-yellow-500/30">
+    <div>
+      <h1 class="text-base font-extrabold text-yellow-400 tracking-wider">⚡ CERES TRADING AI</h1>
+      <p class="text-xs text-gray-400">Tutor de Scalping & Razonamiento IA</p>
+    </div>
+    <div class="text-right">
+      <span class="text-xs text-gray-400">Demo Balance</span>
+      <p id="balance" class="text-sm font-bold text-emerald-400">$1,000.00</p>
+    </div>
+  </header>
+
+  <!-- SELECCIÓN DE MONEDAS VOLÁTILES -->
+  <div class="flex gap-2 mb-3">
+    <button onclick="cambiarMoneda('BTC/USDT', 65000)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded border border-yellow-500/40 text-yellow-400 font-bold">BTC/USDT</button>
+    <button onclick="cambiarMoneda('SOL/USDT', 145)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded border border-purple-500/40 text-purple-400 font-bold">SOL/USDT</button>
+    <button onclick="cambiarMoneda('ETH/USDT', 2600)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-xs py-2 rounded border border-blue-500/40 text-blue-400 font-bold">ETH/USDT</button>
+  </div>
+
+  <!-- GRÁFICO EN VIVO -->
+  <div class="relative mb-3">
+    <div class="absolute top-2 left-3 z-10 flex items-center gap-2">
+      <span id="symbol-display" class="text-xs font-bold text-white bg-gray-900/90 px-2 py-1 rounded border border-gray-700">BTC/USDT</span>
+      <span id="price-display" class="text-xs font-mono font-bold text-emerald-400">$65,000.00</span>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <!-- PANEL DE RAZONAMIENTO EN VIVO CERES AI -->
+  <div class="bg-gray-900 border border-yellow-500/30 rounded-lg p-3 mb-3">
+    <div class="flex items-center gap-2 mb-1">
+      <span class="w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+      <h2 class="text-xs font-bold text-yellow-400">CERES AI: Explicación de Vela en Vivo</h2>
+    </div>
+    <p id="ai-live-text" class="text-xs text-gray-300 leading-relaxed">Analizando flujo de órdenes y anatomía de velas...</p>
+  </div>
+
+  <!-- OPERACIÓN Y BOTONES -->
+  <div class="grid grid-cols-2 gap-2 mb-3">
+    <button onclick="operar('LONG')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-sm shadow-lg active:scale-95 transition">
+      🟢 COMPRAR (LONG)
+    </button>
+    <button onclick="operar('SHORT')" class="bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-lg text-sm shadow-lg active:scale-95 transition">
+      🔴 VENDER (SHORT)
+    </button>
+  </div>
+
+  <!-- RETROALIMENTACIÓN DE CORRECCIÓN -->
+  <div id="feedback-box" class="hidden bg-gray-900 border p-3 rounded-lg mb-3">
+    <h3 id="feedback-title" class="text-xs font-bold mb-1"></h3>
+    <p id="feedback-desc" class="text-xs leading-relaxed"></p>
+  </div>
+
+  <script>
+    let symbol = 'BTC/USDT';
+    let currentPrice = 65000;
+    let candles = [];
+
+    function initCandles() {
+      candles = [];
+      let base = currentPrice;
+      for (let i = 0; i < 18; i++) {
+        let open = base + (Math.random() - 0.5) * (currentPrice * 0.002);
+        let close = open + (Math.random() - 0.5) * (currentPrice * 0.002);
+        let high = Math.max(open, close) + Math.random() * (currentPrice * 0.001);
+        let low = Math.min(open, close) - Math.random() * (currentPrice * 0.001);
+        candles.push({ open, high, low, close });
+        base = close;
+      }
+    }
+
+    function cambiarMoneda(s, p) {
+      symbol = s;
+      currentPrice = p;
+      document.getElementById('symbol-display').innerText = symbol;
+      initCandles();
+    }
+
+    function renderChart() {
+      const canvas = document.getElementById('chart');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let maxP = Math.max(...candles.map(c => c.high));
+      let minP = Math.min(...candles.map(c => c.low));
+      let range = (maxP - minP) || 1;
+
+      let candleWidth = (canvas.width - 30) / candles.length;
+
+      candles.forEach((c, i) => {
+        let x = i * candleWidth + 10;
+        let isGreen = c.close >= c.open;
+
+        let yHigh = canvas.height - ((c.high - minP) / range) * (canvas.height - 40) - 20;
+        let yLow = canvas.height - ((c.low - minP) / range) * (canvas.height - 40) - 20;
+        let yOpen = canvas.height - ((c.open - minP) / range) * (canvas.height - 40) - 20;
+        let yClose = canvas.height - ((c.close - minP) / range) * (canvas.height - 40) - 20;
+
+        ctx.strokeStyle = isGreen ? '#10b981' : '#f43f5e';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + candleWidth / 2, yHigh);
+        ctx.lineTo(x + candleWidth / 2, yLow);
+        ctx.stroke();
+
+        ctx.fillStyle = isGreen ? '#10b981' : '#f43f5e';
+        let h = Math.max(Math.abs(yClose - yOpen), 2);
+        ctx.fillRect(x + 2, Math.min(yOpen, yClose), candleWidth - 4, h);
+      });
+    }
+
+    setInterval(() => {
+      let change = (Math.random() - 0.49) * (currentPrice * 0.0015);
+      currentPrice += change;
+      
+      let lastCandle = candles[candles.length - 1];
+      lastCandle.close = currentPrice;
+      if (currentPrice > lastCandle.high) lastCandle.high = currentPrice;
+      if (currentPrice < lastCandle.low) lastCandle.low = currentPrice;
+
+      document.getElementById('price-display').innerText = '$' + currentPrice.toFixed(2);
+      renderChart();
+      analizarVelaEnVivo(lastCandle);
+    }, 1000);
+
+    function analizarVelaEnVivo(c) {
+      let range = c.high - c.low;
+      let upperWick = c.high - Math.max(c.open, c.close);
+      let lowerWick = Math.min(c.open, c.close) - c.low;
+      let text = "";
+
+      if (upperWick > range * 0.38) {
+        text = "⚠️ **Rechazo Superior:** La vela deja mecha larga arriba en " + symbol + ". Vendedores absorbiendo compras. Alto riesgo para Longs.";
+      } else if (lowerWick > range * 0.38) {
+        text = "📈 **Absorción Compradora:** Presión en la mecha inferior. Compradores defendiendo la zona. Atento a rebote rápido.";
+      } else if (c.close > c.open) {
+        text = "🟢 **Impulso Alcista:** Cuerpo verde dominando. Presión de compra activa en tiempo real.";
+      } else {
+        text = "🔴 **Presión Bajista:** Vela roja en expansión. Dominio de oferta en la sesión actual.";
+      }
+
+      document.getElementById('ai-live-text').innerHTML = text;
+    }
+
+    function operar(tipo) {
+      let c = candles[candles.length - 1];
+      let range = c.high - c.low;
+      let upperWick = c.high - Math.max(c.open, c.close);
+      let lowerWick = Math.min(c.open, c.close) - c.low;
+
+      let box = document.getElementById('feedback-box');
+      let title = document.getElementById('feedback-title');
+      let desc = document.getElementById('feedback-desc');
+
+      box.classList.remove('hidden', 'border-red-500', 'border-emerald-500', 'bg-red-950/40', 'bg-emerald-950/40');
+
+      if (tipo === 'LONG' && upperWick > range * 0.35) {
+        box.classList.add('border-red-500', 'bg-red-950/40');
+        title.className = "text-xs font-bold text-red-400 mb-1";
+        title.innerText = "❌ CORRECCIÓN DE CERES AI";
+        desc.innerText = "¡Cuidado! Entraste a COMPRAR en pleno rechazo superior (mecha alta). En scalping esto es entrar tarde cuando la presión se agota.";
+      } else if (tipo === 'SHORT' && lowerWick > range * 0.35) {
+        box.classList.add('border-red-500', 'bg-red-950/40');
+        title.className = "text-xs font-bold text-red-400 mb-1";
+        title.innerText = "❌ CORRECCIÓN DE CERES AI";
+        desc.innerText = "¡Cuidado! Vendiste (SHORT) justo en la mecha inferior donde entra la absorción compradora.";
+      } else {
+        box.classList.add('border-emerald-500', 'bg-emerald-950/40');
+        title.className = "text-xs font-bold text-emerald-400 mb-1";
+        title.innerText = "✅ OPERACIÓN VALIDADA";
+        desc.innerText = "Excelente temporización. Entraste con la dirección correcta de la vela sin chocar contra mechas opuestas.";
+      }
+    }
+
+    initCandles();
+  </script>
+</body>
+</html>
